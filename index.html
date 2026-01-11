@@ -18,99 +18,83 @@ header {
   border-bottom: 2px solid #333;
   display: flex;
   justify-content: space-between;
-  align-items: center;
 }
 
-.token {
-  color: #3dff7a;
-  font-weight: bold;
-}
+.token { color:#3dff7a;font-weight:bold; }
 
-.tabs {
-  display: flex;
-  background: #252525;
-}
-
+.tabs { display:flex;background:#252525; }
 .tab {
-  padding: 8px 14px;
-  cursor: pointer;
-  border-right: 1px solid #333;
+  padding:8px 14px;
+  cursor:pointer;
+  border-right:1px solid #333;
 }
-
 .tab.active {
-  background: #1e1e1e;
-  border-bottom: 2px solid #3d7eff;
+  background:#1e1e1e;
+  border-bottom:2px solid #3d7eff;
 }
 
-.view { display: none; padding: 12px; }
-.view.active { display: block; }
+.view { display:none;padding:12px; }
+.view.active { display:block; }
 
-input, button {
-  width: 100%;
-  margin-bottom: 6px;
-  padding: 6px;
-  background: #1a1a1a;
-  border: 1px solid #444;
-  color: #fff;
+input,button {
+  width:100%;
+  margin-bottom:6px;
+  padding:6px;
+  background:#1a1a1a;
+  border:1px solid #444;
+  color:#fff;
 }
-
-button {
-  background: #3d7eff;
-  cursor: pointer;
-}
+button { background:#3d7eff;cursor:pointer; }
 
 .grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-  gap: 12px;
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(160px,1fr));
+  gap:12px;
 }
 
-/* ITEM */
 .item {
-  position: relative;
-  height: 180px;
-  border: 2px solid #3a3a3a;
-  background: #2b2b2b;
-  cursor: pointer;
-  overflow: hidden;
+  position:relative;
+  height:180px;
+  border:2px solid #3a3a3a;
+  cursor:pointer;
+  overflow:hidden;
 }
-
 .item img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
+  width:100%;
+  height:100%;
+  object-fit:cover;
 }
-
 .item-info {
-  position: absolute;
-  bottom: 0;
-  width: 100%;
-  background: rgba(0,0,0,0.7);
-  padding: 6px;
-  font-size: 12px;
+  position:absolute;
+  bottom:0;
+  width:100%;
+  background:rgba(0,0,0,.7);
+  padding:6px;
+  font-size:12px;
 }
 
-/* DEV + MODAL */
-.dev-panel, .modal {
-  position: fixed;
-  background: #252525;
-  border: 2px solid #444;
-  padding: 12px;
+.modal,.dev-panel {
+  position:fixed;
+  background:#252525;
+  border:2px solid #444;
+  padding:12px;
 }
-
-.dev-panel {
-  right: 10px;
-  bottom: 10px;
-  width: 240px;
-  display: none;
-}
-
 .modal {
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 260px;
-  display: none;
+  top:50%;left:50%;
+  transform:translate(-50%,-50%);
+  width:260px;
+  display:none;
+}
+.dev-panel {
+  right:10px;
+  bottom:10px;
+  width:240px;
+  display:none;
+}
+
+.cart-item {
+  border-bottom:1px solid #333;
+  padding:6px 0;
 }
 </style>
 </head>
@@ -119,34 +103,40 @@ button {
 
 <header>
   <strong>Global Trade Link</strong>
-  <div>Tokens: <span id="tokenCount" class="token">0 🟢</span></div>
+  <div>Tokens: <span id="tokenCount" class="token"></span></div>
 </header>
 
 <div class="tabs">
-  <div class="tab active" onclick="switchView('buscar', this)">Buscar</div>
-  <div class="tab" onclick="switchView('publicar', this)">Publicar</div>
+  <div class="tab active" onclick="switchView('buscar',this)">Buscar</div>
+  <div class="tab" onclick="switchView('pedido',this)">Pedido</div>
+  <div class="tab" onclick="switchView('publicar',this)">Publicar</div>
   <div class="tab" onclick="toggleDev()">Modo Dev</div>
 </div>
 
-<!-- BUSCAR -->
 <div id="buscar" class="view active">
   <div class="grid" id="grid"></div>
 </div>
 
-<!-- PUBLICAR -->
+<div id="pedido" class="view">
+  <h3>Pedido actual</h3>
+  <div id="cartList"></div>
+  <p>Total: <span id="cartTotal" class="token"></span></p>
+  <button onclick="confirmOrder()">Confirmar Pedido</button>
+  <button onclick="clearCart()">Vaciar Pedido</button>
+</div>
+
 <div id="publicar" class="view">
   <h3>Publicar Item</h3>
   <input id="pName" placeholder="Nombre">
-  <input id="pPrice" type="number" placeholder="Precio (tokens)">
+  <input id="pPrice" type="number" placeholder="Precio">
   <input id="pQty" type="number" placeholder="Cantidad">
   <input id="pImg" type="file" accept="image/*">
   <button onclick="publishItem()">Publicar</button>
 </div>
 
-<!-- DEV PANEL -->
 <div class="dev-panel" id="devPanel">
   <h4>Editar Item</h4>
-  <img id="devImg" style="width:100%;height:100px;object-fit:cover;margin-bottom:6px">
+  <img id="devImg" style="width:100%;height:100px;object-fit:cover">
   <input id="editName">
   <input id="editPrice" type="number">
   <input id="editQty" type="number">
@@ -154,156 +144,136 @@ button {
   <button onclick="saveEdit()">Guardar Item</button>
 
   <hr>
-
   <h4>Tokens (Admin)</h4>
-  <input id="tokenAmount" type="number" placeholder="+ o - tokens">
-  <button onclick="modifyTokens()">Aplicar Tokens</button>
+  <input id="tokenAmount" type="number">
+  <button onclick="modifyTokens()">Aplicar</button>
 </div>
 
-<!-- MODAL COMPRA -->
 <div class="modal" id="buyModal">
   <h3 id="buyName"></h3>
   <input id="buyQty" type="number" min="1">
-  <p>Total: <span id="buyTotal" class="token"></span></p>
-  <button onclick="confirmBuy()">Confirmar</button>
+  <button onclick="addToCart()">Agregar al Pedido</button>
   <button onclick="closeModal()">Cancelar</button>
 </div>
 
 <script>
 let items = [];
-let selectedIndex = null;
-let buyIndex = null;
+let cart = [];
 let tokens = 5000;
+let selectedIndex=null, buyIndex=null;
 
-/* UTIL */
-function fileToBase64(file, cb) {
-  const r = new FileReader();
-  r.onload = () => cb(r.result);
-  r.readAsDataURL(file);
-}
+function fileToBase64(f,cb){const r=new FileReader();r.onload=()=>cb(r.result);r.readAsDataURL(f);}
 
-/* VISTAS */
-function switchView(id, el) {
-  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+function switchView(id,el){
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
   document.getElementById(id).classList.add('active');
   el.classList.add('active');
 }
 
-/* RENDER */
-function render() {
-  tokenCount.textContent = tokens + " 🟢";
-  grid.innerHTML = "";
-
-  items.forEach((item, i) => {
-    const d = document.createElement("div");
-    d.className = "item";
-    d.innerHTML = `
-      <img src="${item.img}">
+function render(){
+  tokenCount.textContent = tokens+" 🟢";
+  grid.innerHTML="";
+  items.forEach((it,i)=>{
+    const d=document.createElement("div");
+    d.className="item";
+    d.innerHTML=`
+      <img src="${it.img}">
       <div class="item-info">
-        <strong>${item.name}</strong><br>
-        <span class="token">${item.price} 🟢</span> | Stock: ${item.qty}
-      </div>
-    `;
-    d.onclick = () => openBuy(i);
-    d.oncontextmenu = e => {
-      e.preventDefault();
-      selectItem(i);
-      toggleDev(true);
-    };
+        <strong>${it.name}</strong><br>
+        ${it.price} 🟢 | Stock:${it.qty}
+      </div>`;
+    d.onclick=()=>openBuy(i);
+    d.oncontextmenu=e=>{e.preventDefault();selectItem(i);toggleDev(true);}
     grid.appendChild(d);
   });
+  renderCart();
 }
 
-/* PUBLICAR */
-function publishItem() {
-  if (!pImg.files[0]) return alert("Selecciona imagen");
-  fileToBase64(pImg.files[0], img => {
-    items.push({
-      name: pName.value,
-      price: +pPrice.value,
-      qty: +pQty.value,
-      img
-    });
+function renderCart(){
+  cartList.innerHTML="";
+  let total=0;
+  cart.forEach(c=>{
+    const it=items[c.index];
+    const cost=c.qty*it.price;
+    total+=cost;
+    cartList.innerHTML+=`
+      <div class="cart-item">
+        ${it.name} x${c.qty} = <span class="token">${cost} 🟢</span>
+      </div>`;
+  });
+  cartTotal.textContent = total+" 🟢";
+}
+
+function openBuy(i){
+  buyIndex=i;
+  buyName.textContent=items[i].name;
+  buyQty.value=1;
+  buyModal.style.display="block";
+}
+
+function addToCart(){
+  const qty=+buyQty.value;
+  const it=items[buyIndex];
+  if(qty>it.qty) return alert("Stock insuficiente");
+  const found=cart.find(c=>c.index===buyIndex);
+  if(found) found.qty+=qty;
+  else cart.push({index:buyIndex,qty});
+  closeModal();
+  renderCart();
+}
+
+function confirmOrder(){
+  let total=0;
+  cart.forEach(c=> total+=c.qty*items[c.index].price);
+  if(total>tokens) return alert("Tokens insuficientes");
+
+  cart.forEach(c=>{
+    items[c.index].qty-=c.qty;
+  });
+  tokens-=total;
+  cart=[];
+  render();
+}
+
+function clearCart(){ cart=[]; renderCart(); }
+
+function closeModal(){ buyModal.style.display="none"; }
+
+function publishItem(){
+  fileToBase64(pImg.files[0],img=>{
+    items.push({name:pName.value,price:+pPrice.value,qty:+pQty.value,img});
     render();
   });
 }
 
-/* DEV */
-function selectItem(i) {
-  selectedIndex = i;
-  const it = items[i];
-  editName.value = it.name;
-  editPrice.value = it.price;
-  editQty.value = it.qty;
-  devImg.src = it.img;
+function selectItem(i){
+  selectedIndex=i;
+  const it=items[i];
+  editName.value=it.name;
+  editPrice.value=it.price;
+  editQty.value=it.qty;
+  devImg.src=it.img;
 }
 
-function saveEdit() {
-  if (selectedIndex === null) return;
-  const it = items[selectedIndex];
-  it.name = editName.value;
-  it.price = +editPrice.value;
-  it.qty = +editQty.value;
-
-  if (editImg.files[0]) {
-    fileToBase64(editImg.files[0], img => {
-      it.img = img;
-      devImg.src = img;
-      render();
-    });
+function saveEdit(){
+  const it=items[selectedIndex];
+  it.name=editName.value;
+  it.price=+editPrice.value;
+  it.qty=+editQty.value;
+  if(editImg.files[0]){
+    fileToBase64(editImg.files[0],img=>{it.img=img;render();});
   } else render();
 }
 
-function modifyTokens() {
-  tokens += Number(tokenAmount.value);
-  tokenAmount.value = "";
-  render();
-}
+function modifyTokens(){ tokens+=+tokenAmount.value; render(); }
+function toggleDev(f){ devPanel.style.display=f||devPanel.style.display==="none"?"block":"none"; }
 
-function toggleDev(force) {
-  devPanel.style.display =
-    force || devPanel.style.display === "none" ? "block" : "none";
-}
-
-/* COMPRA */
-function openBuy(i) {
-  buyIndex = i;
-  buyName.textContent = items[i].name;
-  buyQty.value = 1;
-  updateBuyTotal();
-  buyModal.style.display = "block";
-}
-
-function updateBuyTotal() {
-  buyTotal.textContent =
-    buyQty.value * items[buyIndex].price + " 🟢";
-}
-buyQty.oninput = updateBuyTotal;
-
-function confirmBuy() {
-  const qty = +buyQty.value;
-  const cost = qty * items[buyIndex].price;
-
-  if (qty > items[buyIndex].qty) return alert("Stock insuficiente");
-  if (cost > tokens) return alert("Tokens insuficientes");
-
-  items[buyIndex].qty -= qty;
-  tokens -= cost;
-  closeModal();
-  render();
-}
-
-function closeModal() {
-  buyModal.style.display = "none";
-}
-
-/* ITEM INICIAL */
 items.push({
-  name: "Item de prueba",
-  price: 100,
-  qty: 10,
-  img: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAFElEQVR42mNk+M9Qz0AEYBxVSF8AAF4fA8m4a9jLAAAAAElFTkSuQmCC"
+  name:"Item de prueba",
+  price:100,
+  qty:10,
+  img:"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAFElEQVR42mNk+M9Qz0AEYBxVSF8AAF4fA8m4a9jLAAAAAElFTkSuQmCC"
 });
 
 render();
