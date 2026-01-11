@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>GTL - Estilo PokeMMO</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      background: #1e1e1e;
+      color: #f2f2f2;
+    }
+    header {
+      background: #2c2c2c;
+      padding: 8px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 2px solid #3a3a3a;
+    }
+    header h1 {
+      font-size: 16px;
+      margin: 0;
+    }
+    button {
+      background: #3d7eff;
+      border: none;
+      padding: 6px 10px;
+      border-radius: 4px;
+      color: white;
+      cursor: pointer;
+      font-size: 12px;
+    }
+    button:hover { background: #5a93ff; }
+
+    /* Tabs */
+    .tabs {
+      display: flex;
+      background: #252525;
+      border-bottom: 2px solid #333;
+    }
+    .tab {
+      padding: 8px 14px;
+      cursor: pointer;
+      font-size: 13px;
+      border-right: 1px solid #333;
+    }
+    .tab.active {
+      background: #1e1e1e;
+      border-bottom: 2px solid #3d7eff;
+    }
+
+    .view { display: none; padding: 12px; }
+    .view.active { display: block; }
+
+    /* Grid de items */
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap: 12px;
+    }
+    .item {
+      background: #2b2b2b;
+      border: 2px solid #3a3a3a;
+      border-radius: 6px;
+      padding: 8px;
+      text-align: center;
+      cursor: pointer;
+    }
+    .item img {
+      width: 48px;
+      height: 48px;
+      image-rendering: pixelated;
+    }
+    .item h3 { font-size: 13px; margin: 6px 0 2px; }
+    .item p { margin: 2px 0; font-size: 12px; }
+
+    /* Formularios */
+    input, select {
+      background: #1a1a1a;
+      border: 1px solid #444;
+      color: #fff;
+      padding: 4px;
+      margin-bottom: 6px;
+      width: 100%;
+      font-size: 12px;
+    }
+
+    /* Dev panel */
+    .dev-panel {
+      position: fixed;
+      right: 10px;
+      bottom: 10px;
+      background: #252525;
+      border: 2px solid #444;
+      padding: 10px;
+      width: 220px;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Global Trade Link</h1>
+    <button onclick="toggleDev()">Modo Dev</button>
+  </header>
+
+  <div class="tabs">
+    <div class="tab active" onclick="switchView('buscar')">Buscar</div>
+    <div class="tab" onclick="switchView('publicar')">Publicar</div>
+    <div class="tab" onclick="switchView('licitar')">Licitar</div>
+    <div class="tab" onclick="switchView('novedades')">Novedades</div>
+  </div>
+
+  <!-- BUSCAR -->
+  <div id="buscar" class="view active">
+    <input id="search" placeholder="Buscar item..." oninput="render()" />
+    <div class="grid" id="grid"></div>
+  </div>
+
+  <!-- PUBLICAR -->
+  <div id="publicar" class="view">
+    <h3>Publicar Item</h3>
+    <input id="pName" placeholder="Nombre del item" />
+    <input id="pPrice" type="number" placeholder="Precio" />
+    <input id="pQty" type="number" placeholder="Cantidad" />
+    <input id="pImg" placeholder="URL imagen" />
+    <button onclick="publishItem()">Publicar</button>
+  </div>
+
+  <!-- LICITAR -->
+  <div id="licitar" class="view">
+    <h3>Subastas activas</h3>
+    <div class="grid" id="auctionGrid"></div>
+  </div>
+
+  <!-- NOVEDADES -->
+  <div id="novedades" class="view">
+    <h3>Novedades del Mercado</h3>
+    <ul id="news"></ul>
+  </div>
+
+  <!-- DEV -->
+  <div class="dev-panel" id="devPanel">
+    <h4>Editar Item</h4>
+    <input id="editPrice" type="number" placeholder="Precio" />
+    <input id="editQty" type="number" placeholder="Cantidad" />
+    <button onclick="saveEdit()">Guardar</button>
+  </div>
+
+  <script>
+    let items = [];
+    let auctions = [];
+    let selectedIndex = null;
+
+    function switchView(id) {
+      document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.getElementById(id).classList.add('active');
+      event.target.classList.add('active');
+    }
+
+    function render() {
+      const grid = document.getElementById('grid');
+      const q = document.getElementById('search').value.toLowerCase();
+      grid.innerHTML = '';
+      items.filter(i => i.name.toLowerCase().includes(q)).forEach((item, i) => {
+        const d = document.createElement('div');
+        d.className = 'item';
+        d.onclick = () => selectItem(i);
+        d.innerHTML = `
+          <img src="${item.img}" />
+          <h3>${item.name}</h3>
+          <p>$${item.price}</p>
+          <p>Stock: ${item.qty}</p>`;
+        grid.appendChild(d);
+      });
+    }
+
+    function publishItem() {
+      const item = {
+        name: pName.value,
+        price: pPrice.value,
+        qty: pQty.value,
+        img: pImg.value || 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png'
+      };
+      items.push(item);
+      addNews(`Nuevo item publicado: ${item.name}`);
+      render();
+      alert('Item publicado');
+    }
+
+    function selectItem(i) {
+      selectedIndex = i;
+      editPrice.value = items[i].price;
+      editQty.value = items[i].qty;
+    }
+
+    function saveEdit() {
+      if (selectedIndex === null) return;
+      items[selectedIndex].price = editPrice.value;
+      items[selectedIndex].qty = editQty.value;
+      render();
+    }
+
+    function toggleDev() {
+      devPanel.style.display = devPanel.style.display === 'block' ? 'none' : 'block';
+    }
+
+    function addNews(text) {
+      const li = document.createElement('li');
+      li.textContent = new Date().toLocaleTimeString() + ' - ' + text;
+      news.prepend(li);
+    }
+
+    // Datos iniciales
+    items.push({ name: 'Poké Ball', price: 200, qty: 50, img: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png' });
+    items.push({ name: 'Ultra Ball', price: 1200, qty: 15, img: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/ultra-ball.png' });
+    addNews('Mercado iniciado');
+    render();
+  </script>
+</body>
+</html>
