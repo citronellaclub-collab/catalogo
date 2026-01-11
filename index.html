@@ -2,12 +2,12 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<title>GTL - Catálogo</title>
+<title>GTL</title>
 
 <style>
 body {
   margin: 0;
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: Arial, sans-serif;
   background: #1e1e1e;
   color: #f2f2f2;
 }
@@ -15,7 +15,10 @@ body {
 header {
   background: #2c2c2c;
   padding: 10px 16px;
-  border-bottom: 2px solid #3a3a3a;
+  border-bottom: 2px solid #333;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .token {
@@ -26,14 +29,11 @@ header {
 .tabs {
   display: flex;
   background: #252525;
-  border-bottom: 2px solid #333;
 }
 
 .tab {
   padding: 8px 14px;
   cursor: pointer;
-  font-size: 13px;
-  border-right: 1px solid #333;
 }
 
 .tab.active {
@@ -41,31 +41,21 @@ header {
   border-bottom: 2px solid #3d7eff;
 }
 
-.view {
-  display: none;
-  padding: 12px;
-}
-
-.view.active {
-  display: block;
-}
+.view { display: none; padding: 12px; }
+.view.active { display: block; }
 
 input, button {
+  width: 100%;
+  margin-bottom: 6px;
+  padding: 6px;
   background: #1a1a1a;
   border: 1px solid #444;
   color: #fff;
-  padding: 6px;
-  margin-bottom: 6px;
-  font-size: 12px;
 }
 
 button {
   background: #3d7eff;
   cursor: pointer;
-}
-
-button:hover {
-  background: #5a93ff;
 }
 
 .grid {
@@ -77,10 +67,8 @@ button:hover {
 .item {
   background: #2b2b2b;
   border: 2px solid #3a3a3a;
-  border-radius: 6px;
   padding: 8px;
   text-align: center;
-  cursor: pointer;
 }
 
 .item img {
@@ -89,19 +77,28 @@ button:hover {
 }
 
 .buy-btn {
-  width: 100%;
   background: #2fa866;
-  margin-top: 6px;
+}
+
+.dev-panel, .modal {
+  position: fixed;
+  background: #252525;
+  border: 2px solid #444;
+  padding: 12px;
 }
 
 .dev-panel {
-  position: fixed;
   right: 10px;
   bottom: 10px;
   width: 220px;
-  background: #252525;
-  border: 2px solid #444;
-  padding: 10px;
+  display: none;
+}
+
+.modal {
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 260px;
   display: none;
 }
 </style>
@@ -110,134 +107,108 @@ button:hover {
 <body>
 
 <header>
-  <strong>Global Trade Link</strong> —
-  Tokens: <span class="token" id="tokenCount">5000 🟢</span>
-  <button onclick="toggleDev()" style="float:right">Modo Dev</button>
+  <strong>Global Trade Link</strong>
+  <div>Tokens: <span id="tokenCount" class="token">5000 🟢</span></div>
 </header>
 
 <div class="tabs">
   <div class="tab active" onclick="switchView('buscar', this)">Buscar</div>
   <div class="tab" onclick="switchView('publicar', this)">Publicar</div>
+  <div class="tab" onclick="toggleDev()">Modo Dev</div>
 </div>
 
-<!-- BUSCAR -->
 <div id="buscar" class="view active">
-  <input id="search" placeholder="Buscar item..." oninput="render()">
   <div class="grid" id="grid"></div>
 </div>
 
-<!-- PUBLICAR -->
 <div id="publicar" class="view">
-  <h3>Publicar Item</h3>
   <input id="pName" placeholder="Nombre">
-  <input id="pPrice" type="number" placeholder="Precio en tokens">
+  <input id="pPrice" type="number" placeholder="Precio">
   <input id="pQty" type="number" placeholder="Cantidad">
   <input id="pImg" type="file" accept="image/*">
   <button onclick="publishItem()">Publicar</button>
 </div>
 
-<!-- DEV PANEL -->
+<!-- DEV -->
 <div class="dev-panel" id="devPanel">
-  <h4>Editor de Item</h4>
-  <img id="devImg" style="width:48px;height:48px;display:block;margin-bottom:6px">
-  <input id="editName" placeholder="Nombre">
-  <input id="editPrice" type="number" placeholder="Precio">
-  <input id="editQty" type="number" placeholder="Cantidad">
+  <img id="devImg">
+  <input id="editName">
+  <input id="editPrice" type="number">
+  <input id="editQty" type="number">
   <input id="editImg" type="file" accept="image/*">
   <button onclick="saveEdit()">Guardar</button>
+</div>
+
+<!-- MODAL ADQUIRIR -->
+<div class="modal" id="buyModal">
+  <h3 id="buyName"></h3>
+  <input id="buyQty" type="number" min="1">
+  <p>Total: <span id="buyTotal" class="token"></span></p>
+  <button onclick="confirmBuy()">Confirmar</button>
+  <button onclick="closeModal()">Cancelar</button>
 </div>
 
 <script>
 let items = [];
 let selectedIndex = null;
+let buyIndex = null;
 let tokens = 5000;
 
-function fileToBase64(file, cb) {
-  const reader = new FileReader();
-  reader.onload = () => cb(reader.result);
-  reader.readAsDataURL(file);
-}
-
-function switchView(id, el) {
-  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-  document.getElementById(id).classList.add('active');
-  el.classList.add('active');
+function fileToBase64(f, cb) {
+  const r = new FileReader();
+  r.onload = () => cb(r.result);
+  r.readAsDataURL(f);
 }
 
 function render() {
-  document.getElementById('tokenCount').textContent = tokens + ' 🟢';
-  const grid = document.getElementById('grid');
-  const q = search.value.toLowerCase();
-  grid.innerHTML = '';
-
-  items.filter(i => i.name.toLowerCase().includes(q)).forEach((item, i) => {
-    const div = document.createElement('div');
-    div.className = 'item';
-    div.onclick = () => selectItem(i);
-
-    div.innerHTML = `
+  tokenCount.textContent = tokens + " 🟢";
+  grid.innerHTML = "";
+  items.forEach((item, i) => {
+    const d = document.createElement("div");
+    d.className = "item";
+    d.innerHTML = `
       <img src="${item.img}">
-      <h3>${item.name}</h3>
+      <h4>${item.name}</h4>
       <p class="token">${item.price} 🟢</p>
       <p>Stock: ${item.qty}</p>
       <button class="buy-btn">Adquirir</button>
     `;
-
-    div.querySelector('.buy-btn').onclick = e => {
-      e.stopPropagation();
-      acquireItem(i);
-    };
-
-    grid.appendChild(div);
+    d.querySelector("button").onclick = () => openBuy(i);
+    d.onclick = () => selectItem(i);
+    grid.appendChild(d);
   });
 }
 
 function publishItem() {
-  const file = pImg.files[0];
-  if (!pName.value || !pPrice.value || !pQty.value || !file)
-    return alert('Completa todos los campos');
-
-  fileToBase64(file, img => {
+  fileToBase64(pImg.files[0], img => {
     items.push({
       name: pName.value,
-      price: Number(pPrice.value),
-      qty: Number(pQty.value),
+      price: +pPrice.value,
+      qty: +pQty.value,
       img
     });
     render();
   });
 }
 
-function acquireItem(i) {
-  const item = items[i];
-  if (item.qty <= 0) return alert('Sin stock');
-  if (tokens < item.price) return alert('Tokens insuficientes');
-  tokens -= item.price;
-  item.qty--;
-  render();
-}
-
 function selectItem(i) {
   selectedIndex = i;
-  const item = items[i];
-  editName.value = item.name;
-  editPrice.value = item.price;
-  editQty.value = item.qty;
-  devImg.src = item.img;
+  const it = items[i];
+  editName.value = it.name;
+  editPrice.value = it.price;
+  editQty.value = it.qty;
+  devImg.src = it.img;
 }
 
 function saveEdit() {
-  if (selectedIndex === null) return;
-  const item = items[selectedIndex];
-  item.name = editName.value;
-  item.price = Number(editPrice.value);
-  item.qty = Number(editQty.value);
+  const it = items[selectedIndex];
+  it.name = editName.value;
+  it.price = +editPrice.value;
+  it.qty = +editQty.value;
 
-  const file = editImg.files[0];
-  if (file) {
-    fileToBase64(file, img => {
-      item.img = img;
+  if (editImg.files[0]) {
+    fileToBase64(editImg.files[0], img => {
+      it.img = img;
       devImg.src = img;
       render();
     });
@@ -246,15 +217,45 @@ function saveEdit() {
 
 function toggleDev() {
   devPanel.style.display =
-    devPanel.style.display === 'block' ? 'none' : 'block';
+    devPanel.style.display === "block" ? "none" : "block";
 }
 
-/* Item inicial */
+function openBuy(i) {
+  buyIndex = i;
+  buyName.textContent = items[i].name;
+  buyQty.value = 1;
+  updateBuyTotal();
+  buyModal.style.display = "block";
+}
+
+function updateBuyTotal() {
+  buyTotal.textContent =
+    buyQty.value * items[buyIndex].price + " 🟢";
+}
+
+buyQty.oninput = updateBuyTotal;
+
+function confirmBuy() {
+  const qty = +buyQty.value;
+  const cost = qty * items[buyIndex].price;
+  if (qty > items[buyIndex].qty) return alert("Stock insuficiente");
+  if (cost > tokens) return alert("Tokens insuficientes");
+
+  items[buyIndex].qty -= qty;
+  tokens -= cost;
+  closeModal();
+  render();
+}
+
+function closeModal() {
+  buyModal.style.display = "none";
+}
+
 items.push({
-  name: 'Item de prueba',
+  name: "Item de prueba",
   price: 100,
   qty: 10,
-  img: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAFElEQVR42mNk+M9Qz0AEYBxVSF8AAF4fA8m4a9jLAAAAAElFTkSuQmCC'
+  img: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAFElEQVR42mNk+M9Qz0AEYBxVSF8AAF4fA8m4a9jLAAAAAElFTkSuQmCC"
 });
 
 render();
@@ -262,3 +263,5 @@ render();
 
 </body>
 </html>
+
+
