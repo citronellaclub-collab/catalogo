@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<title>GTL</title>
+<title>Global Trade Link</title>
 
 <style>
 body {
@@ -34,6 +34,7 @@ header {
 .tab {
   padding: 8px 14px;
   cursor: pointer;
+  border-right: 1px solid #333;
 }
 
 .tab.active {
@@ -64,12 +65,12 @@ button {
   gap: 12px;
 }
 
-/* ITEM COMO BOTÓN COMPLETO */
+/* ITEM */
 .item {
   position: relative;
-  background: #2b2b2b;
-  border: 2px solid #3a3a3a;
   height: 180px;
+  border: 2px solid #3a3a3a;
+  background: #2b2b2b;
   cursor: pointer;
   overflow: hidden;
 }
@@ -89,6 +90,7 @@ button {
   font-size: 12px;
 }
 
+/* DEV + MODAL */
 .dev-panel, .modal {
   position: fixed;
   background: #252525;
@@ -117,7 +119,7 @@ button {
 
 <header>
   <strong>Global Trade Link</strong>
-  <div>Tokens: <span id="tokenCount" class="token">5000 🟢</span></div>
+  <div>Tokens: <span id="tokenCount" class="token">0 🟢</span></div>
 </header>
 
 <div class="tabs">
@@ -126,13 +128,16 @@ button {
   <div class="tab" onclick="toggleDev()">Modo Dev</div>
 </div>
 
+<!-- BUSCAR -->
 <div id="buscar" class="view active">
   <div class="grid" id="grid"></div>
 </div>
 
+<!-- PUBLICAR -->
 <div id="publicar" class="view">
+  <h3>Publicar Item</h3>
   <input id="pName" placeholder="Nombre">
-  <input id="pPrice" type="number" placeholder="Precio">
+  <input id="pPrice" type="number" placeholder="Precio (tokens)">
   <input id="pQty" type="number" placeholder="Cantidad">
   <input id="pImg" type="file" accept="image/*">
   <button onclick="publishItem()">Publicar</button>
@@ -149,8 +154,9 @@ button {
   <button onclick="saveEdit()">Guardar Item</button>
 
   <hr>
+
   <h4>Tokens (Admin)</h4>
-  <input id="tokenAmount" type="number" placeholder="Cantidad (+ o -)">
+  <input id="tokenAmount" type="number" placeholder="+ o - tokens">
   <button onclick="modifyTokens()">Aplicar Tokens</button>
 </div>
 
@@ -169,12 +175,14 @@ let selectedIndex = null;
 let buyIndex = null;
 let tokens = 5000;
 
-function fileToBase64(f, cb) {
+/* UTIL */
+function fileToBase64(file, cb) {
   const r = new FileReader();
   r.onload = () => cb(r.result);
-  r.readAsDataURL(f);
+  r.readAsDataURL(file);
 }
 
+/* VISTAS */
 function switchView(id, el) {
   document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
@@ -182,6 +190,7 @@ function switchView(id, el) {
   el.classList.add('active');
 }
 
+/* RENDER */
 function render() {
   tokenCount.textContent = tokens + " 🟢";
   grid.innerHTML = "";
@@ -206,7 +215,9 @@ function render() {
   });
 }
 
+/* PUBLICAR */
 function publishItem() {
+  if (!pImg.files[0]) return alert("Selecciona imagen");
   fileToBase64(pImg.files[0], img => {
     items.push({
       name: pName.value,
@@ -218,6 +229,7 @@ function publishItem() {
   });
 }
 
+/* DEV */
 function selectItem(i) {
   selectedIndex = i;
   const it = items[i];
@@ -228,6 +240,7 @@ function selectItem(i) {
 }
 
 function saveEdit() {
+  if (selectedIndex === null) return;
   const it = items[selectedIndex];
   it.name = editName.value;
   it.price = +editPrice.value;
@@ -253,6 +266,7 @@ function toggleDev(force) {
     force || devPanel.style.display === "none" ? "block" : "none";
 }
 
+/* COMPRA */
 function openBuy(i) {
   buyIndex = i;
   buyName.textContent = items[i].name;
@@ -270,6 +284,7 @@ buyQty.oninput = updateBuyTotal;
 function confirmBuy() {
   const qty = +buyQty.value;
   const cost = qty * items[buyIndex].price;
+
   if (qty > items[buyIndex].qty) return alert("Stock insuficiente");
   if (cost > tokens) return alert("Tokens insuficientes");
 
@@ -283,6 +298,7 @@ function closeModal() {
   buyModal.style.display = "none";
 }
 
+/* ITEM INICIAL */
 items.push({
   name: "Item de prueba",
   price: 100,
