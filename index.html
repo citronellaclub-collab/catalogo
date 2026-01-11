@@ -74,6 +74,8 @@
     }
     .item h3 { font-size: 13px; margin: 6px 0 2px; }
     .item p { margin: 2px 0; font-size: 12px; }
+    .token { color: #3dff7a; font-weight: bold; }
+    .buy-btn { margin-top: 6px; width: 100%; background:#2fa866; }
 
     /* Formularios */
     input, select {
@@ -124,7 +126,7 @@
     <input id="pName" placeholder="Nombre del item" />
     <input id="pPrice" type="number" placeholder="Precio" />
     <input id="pQty" type="number" placeholder="Cantidad" />
-    <input id="pImg" placeholder="URL imagen" />
+    <input id="pImg" type="file" accept="image/*" />
     <button onclick="publishItem()">Publicar</button>
   </div>
 
@@ -143,8 +145,11 @@
   <!-- DEV -->
   <div class="dev-panel" id="devPanel">
     <h4>Editar Item</h4>
+    <img id="devImg" style="width:48px;height:48px;display:block;margin-bottom:6px" />
+    <input id="editName" placeholder="Nombre" />
     <input id="editPrice" type="number" placeholder="Precio" />
     <input id="editQty" type="number" placeholder="Cantidad" />
+    <input id="editImg" type="file" accept="image/*" />
     <button onclick="saveEdit()">Guardar</button>
   </div>
 
@@ -152,6 +157,7 @@
     let items = [];
     let auctions = [];
     let selectedIndex = null;
+    let tokens =
 
     function switchView(id) {
       document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
@@ -171,23 +177,27 @@
         d.innerHTML = `
           <img src="${item.img}" />
           <h3>${item.name}</h3>
-          <p>$${item.price}</p>
-          <p>Stock: ${item.qty}</p>`;
+          <p class="token">${item.price} 🟢 Tokens</p>
+          <p>Stock: ${item.qty}</p>
+          <button class="buy-btn" onclick="event.stopPropagation(); acquireItem(${i})">Adquirir</button>`;
         grid.appendChild(d);
       });
     }
 
     function publishItem() {
-      const item = {
-        name: pName.value,
-        price: pPrice.value,
-        qty: pQty.value,
-        img: pImg.value || 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png'
-      };
-      items.push(item);
-      addNews(`Nuevo item publicado: ${item.name}`);
-      render();
-      alert('Item publicado');
+      const file = pImg.files[0];
+      if (!file) return alert('Selecciona una imagen');
+      fileToBase64(file, img => {
+        const item = {
+          name: pName.value,
+          price: pPrice.value,
+          qty: pQty.value,
+          img
+        };
+        items.push(item);
+        addNews(`Nuevo item publicado: ${item.name}`);
+        render();
+      });
     }
 
     function selectItem(i) {
@@ -198,9 +208,16 @@
 
     function saveEdit() {
       if (selectedIndex === null) return;
+      items[selectedIndex].name = editName.value;
       items[selectedIndex].price = editPrice.value;
       items[selectedIndex].qty = editQty.value;
-      render();
+      const file = editImg.files[0];
+      if (file) {
+        fileToBase64(file, img => {
+          items[selectedIndex].img = img;
+          render();
+        });
+      } else render();
     }
 
     function toggleDev() {
@@ -221,3 +238,8 @@
   </script>
 </body>
 </html>
+
+  </script>
+</body>
+</html>
+
